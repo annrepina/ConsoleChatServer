@@ -20,6 +20,7 @@ namespace WpfChatServer.Model
         public Client(TcpClient tcpClient, Server server)
         {
             Id = Guid.NewGuid().ToString();
+            Name = "";
             _tcpClient = tcpClient;
             _server = server;
             _server.AddClient(this);
@@ -41,6 +42,27 @@ namespace WpfChatServer.Model
         /// </summary>
         public string Name { get; private set; }
 
+        #region Константы
+
+        /// <summary>
+        /// Код добавления нового клиента
+        /// </summary>
+        public const byte AddingNewUserCode = 1;
+
+        /// <summary>
+        /// Код удаления клиента
+        /// </summary>
+        public const byte DisconnectingUserCode = 2;
+
+        /// <summary>
+        /// Код отравки сообщений
+        /// </summary>
+        public const byte SendingMessageCode = 3;
+
+        #endregion Константы
+
+
+
         /// <summary>
         /// TCP клиент
         /// </summary>
@@ -51,30 +73,72 @@ namespace WpfChatServer.Model
         /// </summary>
         private Server _server;
 
-        public void Process()
+        /// <summary>
+        /// Обработать данные
+        /// </summary>
+        public void ProcessData()
         {
             try
             {
-                // 
+                GetUserName();
 
+                string message = "";
+
+                // в бесконечном цикле получаем сообщения от клиента
+                while (true)
+                {
+                    try
+                    {
+                        message = GetMessage();
+                        message = $"{Name}: {message}";
+                        Console.WriteLine(message);
+
+                        _server.BroadcastOperationCode(SendingMessageCode, Id);
+                        _server.BroadcastMessage(message, Id);
+                    }
+                    catch (Exception)
+                    {
+                        message = $"{Name}: покинул/покинула чат";
+                        Console.WriteLine(message);
+
+                        _server.BroadcastOperationCode(DisconnectingUserCode, Id);
+                        _server.BroadcastMessage(Name, Id);
+                        break;
+                    }
+                }
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
+            }
 
-                throw;
+            finally
+            {
+                _server.RemoveClient(Id);
+                CloseConnection();
             }
         }
 
+        /// <summary>
+        /// Получить имя пользователя
+        /// </summary>
         private void GetUserName()
         {
             string message = GetMessage();
 
             Name = message;
 
-            message = $"{Name} вошел/вошла в чат";
+            //message = $"{Name} вошел/вошла в чат";
 
+            // отправить всем сообщение о том, что добавляется новый человек
+            _server.BroadcastOperationCode(AddingNewUserCode, Id);
 
+            // Отправить всем имя этого человека
+            _server.BroadcastMessage(Name, Id);
+
+            Console.WriteLine($"{Name} вошел/вошла в чат");
+            //Console.WriteLine(message);
         }
 
         /// <summary>
@@ -84,7 +148,7 @@ namespace WpfChatServer.Model
         {
             string message = "";
 
-            /// Буфер для получения даты
+            // Буфер для получения даты
             byte[] data = new byte[256];
 
             StringBuilder stringBuilder = new StringBuilder();
@@ -109,12 +173,11 @@ namespace WpfChatServer.Model
         /// </summary>
         public void CloseConnection()
         {
-            if(NetworkStream != null)
+            if (NetworkStream != null)
                 NetworkStream.Close();
 
-            if(_tcpClient != null)
+            if (_tcpClient != null)
                 _tcpClient.Close();
         }
-
     }
 }

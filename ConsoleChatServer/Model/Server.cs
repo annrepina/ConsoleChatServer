@@ -48,12 +48,12 @@ namespace WpfChatServer.Model
         /// <param name="clientId">Id клиента</param>
         public void RemoveClient(string clientId)
         {
-            if(_clients != null && _clients.Count > 0)
+            if (_clients != null && _clients.Count > 0)
             {
                 // получаем по id подключение
                 Client client = _clients.FirstOrDefault(c => c.Id == clientId);
 
-                if(client != null)
+                if (client != null)
                     _clients.Remove(client);
             }
 
@@ -69,12 +69,12 @@ namespace WpfChatServer.Model
                 _tcpListener.Start();
                 Console.WriteLine("Сервер запущен. Ожидание подключений...");
 
-                while(true)
+                while (true)
                 {
                     TcpClient tcpClient = _tcpListener.AcceptTcpClient();
 
                     Client client = new Client(tcpClient, this);
-                    Thread clientThread = new Thread(new ThreadStart(client.Process));
+                    Thread clientThread = new Thread(new ThreadStart(client.ProcessData));
                     clientThread.Start();
                 }
             }
@@ -85,7 +85,38 @@ namespace WpfChatServer.Model
             }
         }
 
-        //public void BroadcastMessage(string message, int id)
+        /// <summary>
+        /// Трансляция сообщения подлюченным клиентам
+        /// </summary>
+        /// <param name="message">Сообщение</param>
+        /// <param name="id">Id клиента</param>
+        public void BroadcastMessage(string message, string id)
+        {
+            byte[] data = Encoding.UTF8.GetBytes(message);
+
+            foreach (var client in _clients)
+            {
+                // если id клиента не равно id отправляющего
+                if (client.Id != id)
+                {
+                    // передача данных
+                    client.NetworkStream.Write(data, 0, data.Length);
+                }
+            }
+        }
+
+        public void BroadcastOperationCode(byte operationCode, string id)
+        {
+            foreach (var client in _clients)
+            {
+                // если id клиента не равно id отправляющего
+                if (client.Id != id)
+                {
+                    // передача данных
+                    client.NetworkStream.WriteByte(operationCode);
+                }
+            }
+        }
 
         /// <summary>
         /// Отключение всех клиентов
@@ -96,12 +127,12 @@ namespace WpfChatServer.Model
             _tcpListener.Stop();
 
             foreach (var client in _clients)
-            {   
+            {
                 client.CloseConnection();
             }
 
             //завершение процесса
-            Environment.Exit(0); 
+            Environment.Exit(0);
         }
     }
 }
