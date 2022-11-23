@@ -6,32 +6,39 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WpfChatServer.Model
+namespace WpfChatServer.Net
 {
+    /// <summary>
+    /// Сервер, который принимает подлючения клиентов
+    /// </summary>
     public class Server
     {
+        /// <summary>
+        /// Прослушиватель TCP подключений от клиентов
+        /// </summary>
+        private TcpListener _tcpListener;
+
+        /// <summary>
+        /// Порт
+        /// </summary>
+        private int _port;
+
+        /// <summary>
+        /// Список клиентов
+        /// </summary>
+        private List<Client> _clients;
+
         /// <summary>
         /// Конструктор по умолчанию
         /// </summary>
         public Server()
         {
             _clients = new List<Client>();
+
+            _port = 8888;
+
+            _tcpListener = new TcpListener(IPAddress.Any, _port);
         }
-
-        /// <summary>
-        /// Прослушиватель TCP подключений от клиентов
-        /// </summary>
-        private static TcpListener _tcpListener = new TcpListener(IPAddress.Any, _port);
-
-        /// <summary>
-        /// Порт
-        /// </summary>
-        private static int _port = 8888;
-
-        /// <summary>
-        /// Список клиентов
-        /// </summary>
-        private List<Client> _clients;
 
         /// <summary>
         /// Добавить клиента
@@ -56,7 +63,6 @@ namespace WpfChatServer.Model
                 if (client != null)
                     _clients.Remove(client);
             }
-
         }
 
         /// <summary>
@@ -89,7 +95,7 @@ namespace WpfChatServer.Model
         /// Трансляция сообщения подлюченным клиентам
         /// </summary>
         /// <param name="message">Сообщение</param>
-        /// <param name="id">Id клиента</param>
+        /// <param name="id">Id клиента, который отправил данное сообщение</param>
         public void BroadcastMessage(string message, string id)
         {
             byte[] data = Encoding.UTF8.GetBytes(message);
@@ -121,7 +127,7 @@ namespace WpfChatServer.Model
         /// <summary>
         /// Отключение всех клиентов
         /// </summary>
-        private void DisconnectClients()
+        public void DisconnectClients()
         {
             /// Остановка сервера
             _tcpListener.Stop();

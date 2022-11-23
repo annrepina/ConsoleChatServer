@@ -5,43 +5,13 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WpfChatServer.Model
+namespace WpfChatServer.Net
 {
     /// <summary>
-    /// Клиент
+    /// Клиент, который подключается к серверу
     /// </summary>
     public class Client
     {
-        /// <summary>
-        /// Конструктор с параметрами
-        /// </summary>
-        /// <param name="tcpClient">TCP клиент</param>
-        /// <param name="server">Сервер</param>
-        public Client(TcpClient tcpClient, Server server)
-        {
-            Id = Guid.NewGuid().ToString();
-            Name = "";
-            _tcpClient = tcpClient;
-            _server = server;
-            _server.AddClient(this);
-            NetworkStream = _tcpClient.GetStream();
-        }
-
-        /// <summary>
-        /// Id
-        /// </summary>
-        public string Id { get; private set; }
-
-        /// <summary>
-        /// Предоставляет базовый поток данных для доступа к сети
-        /// </summary>
-        public NetworkStream NetworkStream { get; private set; }
-
-        /// <summary>
-        /// Имя пользователя
-        /// </summary>
-        public string Name { get; private set; }
-
         #region Константы
 
         /// <summary>
@@ -61,7 +31,20 @@ namespace WpfChatServer.Model
 
         #endregion Константы
 
+        /// <summary>
+        /// Id
+        /// </summary>
+        public string Id { get; private set; }
 
+        /// <summary>
+        /// Предоставляет базовый поток данных для доступа к сети
+        /// </summary>
+        public NetworkStream NetworkStream { get; private set; }
+
+        /// <summary>
+        /// Имя пользователя
+        /// </summary>
+        public string Name { get; private set; }
 
         /// <summary>
         /// TCP клиент
@@ -72,6 +55,21 @@ namespace WpfChatServer.Model
         /// Сервер
         /// </summary>
         private Server _server;
+
+        /// <summary>
+        /// Конструктор с параметрами
+        /// </summary>
+        /// <param name="tcpClient">TCP клиент</param>
+        /// <param name="server">Сервер</param>
+        public Client(TcpClient tcpClient, Server server)
+        {
+            Id = Guid.NewGuid().ToString();
+            Name = "";
+            _tcpClient = tcpClient;
+            _server = server;
+            _server.AddClient(this);
+            NetworkStream = _tcpClient.GetStream();
+        }
 
         /// <summary>
         /// Обработать данные
